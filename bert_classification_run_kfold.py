@@ -16,8 +16,6 @@ import timeit
 from datetime import date
 import matplotlib.pyplot as plt
 
-start = timeit.default_timer()
-
 # Your statements here
 def seed_everything(seed=42):
     random.seed(seed)
@@ -61,8 +59,8 @@ SEP_TOKEN = '[SEP]'
 CLS_TOKEN = '[CLS]'
 TRAIN_FILE_PATH = "2024-01-21_data.json"
 MAX_SEQ_LENGTH = 512
-BATCH_SIZE = 24
-NUM_EPOCHS = 80  #
+BATCH_SIZE = 12
+NUM_EPOCHS = 40  #
 GRADIENT_ACCUMULATION_STEPS = 8
 WARMUP_STEPS = 3
 THRESHOLD = 0.50
@@ -219,10 +217,10 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 train_val_dataset = SequenceDataset(TRAIN_FILE_PATH, tokenizer)
 
-validation_split = 0.2
+# validation_split = 0.2
 dataset_size = len(train_val_dataset)
 indices = list(range(dataset_size))
-split = int(np.floor(validation_split * dataset_size))
+# split = int(np.floor(validation_split * dataset_size))
 
 k=5
 splits=KFold(n_splits=k, shuffle=True, random_state=42)
@@ -234,6 +232,7 @@ txts = train_val_dataset.headlines
 weights = make_weights_for_balanced_classes(txts, config.num_labels, class_name=topic)
 
 for fold, (train_indices, val_indices) in enumerate(splits.split(np.arange(len(indices)))):
+    start = timeit.default_timer()
     print('Fold {}'.format(fold + 1))
 
     train_indices_list = train_indices.tolist()
@@ -250,7 +249,7 @@ for fold, (train_indices, val_indices) in enumerate(splits.split(np.arange(len(i
 
     criterion = nn.CrossEntropyLoss()
 
-    # Adam Optimizer with very small learning rate given to BERT
+    # Adam Optimizer with learning rate given to BERT
     optimizer = torch.optim.Adam([
         {'params': model.bert.parameters(), 'lr': 1e-5},
         {'params': model.classifier.parameters(), 'lr': 3e-4}
@@ -403,5 +402,6 @@ for fold, (train_indices, val_indices) in enumerate(splits.split(np.arange(len(i
                         torch.tensor(preds_prob_list).detach().cpu().numpy())
     plt.plot(fpr, tpr, label="data 1, auc=" + str(auc))
     plt.legend(loc=4)
-    plt.savefig('validation_roc_' + str(topic) + '_.png')
+    plt.savefig('validation_roc_' + str(topic) + '_fold_' + str(fold + 1) + '.png')
     plt.show()
+    plt.close()
