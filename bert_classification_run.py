@@ -62,7 +62,7 @@ CLS_TOKEN = '[CLS]'
 TRAIN_FILE_PATH = "2024-01-21_data.json"
 MAX_SEQ_LENGTH = 512
 BATCH_SIZE = 24
-NUM_EPOCHS = 40  # wifi=12, usb=50, bluetooth=40, nfc=30
+NUM_EPOCHS = 80  #
 GRADIENT_ACCUMULATION_STEPS = 8
 WARMUP_STEPS = 3
 THRESHOLD = 0.50
@@ -350,19 +350,15 @@ for epoch in epoch_iterator:
         training_acc_list.append(train_correct_total * 100 / len(train_indices))
         validation_acc_list.append(val_correct_total * 100 / len(val_indices))
 
-        if true_positives + false_positives > 0:
-            precision = true_positives / (true_positives + false_positives)
-        else:
-            precision = float("inf")
         if true_positives + false_negatives > 0:
             recall = true_positives / (true_positives + false_negatives)
         else:
             recall = float("inf")
 
-        if precision + recall > 0:
-            f1 = (2 * precision * recall) / (precision + recall)
+        if true_positives + false_positives > 0:
+            precision = true_positives / (true_positives + false_positives)
         else:
-            f1 = float("nan")
+            precision = float("inf")
 
         if false_positives + true_negatives > 0:
             fpr = (false_positives) / (false_positives + true_negatives)
@@ -370,9 +366,14 @@ for epoch in epoch_iterator:
             fpr = float("inf")
 
         if false_negatives + true_positives > 0:
-            fnr = (false_positives) / (false_negatives + true_positives)
+            fnr = (false_negatives) / (false_negatives + true_positives)
         else:
             fnr = float("inf")
+
+        if precision + recall > 0:
+            f1 = (2 * precision * recall) / (precision + recall)
+        else:
+            f1 = float("nan")
 
         auc = roc_auc_score(labels_list, preds_list)
 
@@ -386,7 +387,7 @@ for epoch in epoch_iterator:
 
 stop = timeit.default_timer()
 torch.save(model.state_dict(),
-           "./ratio_adjusted_03-23_mybertmodel_" + str(topic) + "_" + str(date.today()) + "_epoch_" + str(
+           "./ratio_adjusted_mybertmodel_" + str(topic) + "_" + str(date.today()) + "_epoch_" + str(
                NUM_EPOCHS) + "BATCH_SIZE" + str(BATCH_SIZE) + "_stop" + str(stop) + "_.pth")
 
 print('Running Time: ', stop - start, 's | ', (stop - start) / 60, "min")
