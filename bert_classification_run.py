@@ -10,7 +10,7 @@ import json
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader, SubsetRandomSampler, WeightedRandomSampler
 from tqdm import tqdm, trange
-from sklearn.metrics import roc_auc_score, precision_score, f1_score, recall_score, roc_curve
+from sklearn.metrics import roc_auc_score, roc_curve
 import timeit
 from datetime import date
 import matplotlib.pyplot as plt
