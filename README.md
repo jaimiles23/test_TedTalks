@@ -1,6 +1,6 @@
 # TED talk video classification
 
-## Environment Setup for Ubuntu 22.04
+## How to install
 1. Setting up Miniconda
    - Install Miniconda3 onto your machine. If you have not done so, please follow the 2 links below for instructions:
      https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html
