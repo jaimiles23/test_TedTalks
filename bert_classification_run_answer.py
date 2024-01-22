@@ -175,29 +175,29 @@ def make_weights_for_balanced_classes(txts, nclasses, class_name):
     count_entertainment = [0] * nclasses
     count_politics = [0] * nclasses
     for is_business, is_entertainment, is_politics, is_technology, _ in txts:
-        count_business[is_business] += 1
-        count_entertainment[is_entertainment] += 1
-        count_politics[is_politics] += 1
         count_technology[is_technology] += 1
-
+        if is_technology == 0:
+            count_business[is_business] += 1
+            count_entertainment[is_entertainment] += 1
+            count_politics[is_politics] += 1
     weight_technology = [0.] * nclasses
     weight_business = [0.] * nclasses
     weight_entertainment = [0.] * nclasses
     weight_politics = [0.] * nclasses
     for i in range(nclasses):
         weight_technology[i] = float(n_txts) / float(count_technology[i])
-        weight_business[i] = float(n_txts) / float(count_business[i])
-        weight_entertainment[i] = float(n_txts) / float(count_entertainment[i])
-        weight_politics[i] = float(n_txts) / float(count_politics[i])
+        weight_business[i] = float(count_technology[0]) / float(count_business[i])
+        weight_entertainment[i] = float(count_technology[0]) / float(count_entertainment[i])
+        weight_politics[i] = float(count_technology[0]) / float(count_politics[i])
     weights = [0] * n_txts
     for idx, (is_business, is_entertainment, is_politics, is_technology, txt) in enumerate(txts):
         if class_name == 'technology':
             weights[idx] = weight_technology[is_technology]
-        elif class_name == 'business':
+        elif class_name == 'business' and is_technology == 0:
             weights[idx] = weight_business[is_business]
-        elif class_name == 'entertainment':
+        elif class_name == 'entertainment' and is_technology == 0:
             weights[idx] = weight_entertainment[is_entertainment]
-        elif class_name == 'politics':
+        elif class_name == 'politics' and is_technology == 0:
             weights[idx] = weight_politics[is_politics]
     return weights
 
@@ -233,6 +233,11 @@ weights = make_weights_for_balanced_classes(txts, config.num_labels, class_name=
 train_weights, val_weights = weights[split:], weights[:split]
 train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
 validation_sampler = WeightedRandomSampler(val_weights, len(val_weights))
+
+'''
+
+'''
+
 train_loader = torch.utils.data.DataLoader(train_val_dataset, batch_size=BATCH_SIZE, sampler=train_sampler)
 val_loader = torch.utils.data.DataLoader(train_val_dataset, batch_size=BATCH_SIZE, sampler=validation_sampler)
 
@@ -345,21 +350,37 @@ for epoch in epoch_iterator:
         training_acc_list.append(train_correct_total * 100 / len(train_indices))
         validation_acc_list.append(val_correct_total * 100 / len(val_indices))
 
-        '''
-        Please calculate recall, precision, false_positive_rate, false_negative_rate and f1_score
-        '''
-        recall = float("nan")
-        precision = float("nan")
-        false_positive_rate = float("nan")
-        false_negative_rate = float("nan")
-        f1_score = float("nan")
+        if true_positives + false_negatives > 0:
+            recall = true_positives / (true_positives + false_negatives)
+        else:
+            recall = float("inf")
+
+        if true_positives + false_positives > 0:
+            precision = true_positives / (true_positives + false_positives)
+        else:
+            precision = float("inf")
+
+        if false_positives + true_negatives > 0:
+            fpr = (false_positives) / (false_positives + true_negatives)
+        else:
+            fpr = float("inf")
+
+        if false_negatives + true_positives > 0:
+            fnr = (false_negatives) / (false_negatives + true_positives)
+        else:
+            fnr = float("inf")
+
+        if precision + recall > 0:
+            f1 = (2 * precision * recall) / (precision + recall)
+        else:
+            f1 = float("nan")
 
         auc = roc_auc_score(labels_list, preds_list)
 
         print('Training Accuracy {:.4f}% - Validation Accurracy {:.4f}%'.format(
             train_correct_total * 100 / len(train_indices), val_correct_total * 100 / len(val_indices)))
-        print("Precision {:.4f} - Recall {:.4f} - F1-score - {:.4f}".format(precision, recall, f1_score))
-        print("False Positive Rate {:.4f} - False Negative Rate {:.4f}".format(false_positive_rate, false_negative_rate))
+        print("Precision {:.4f} - Recall {:.4f} - F1-score - {:.4f}".format(precision, recall, f1))
+        print("False Positive Rate {:.4f} - False Negative Rate {:.4f}".format(fpr, fnr))
         print("roc_auc_score {:.4f}".format(auc))
 
     print("-------------------------------------------------------------------------------------")
